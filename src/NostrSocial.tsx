@@ -29,7 +29,7 @@ export function NostrSocial() {
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
       }).map(note => {
-        return <SocialCard note={note} />;
+        return <SocialCard note={note} key={note.id} />;
       })}
     </div>
   );

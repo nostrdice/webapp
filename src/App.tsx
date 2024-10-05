@@ -1,8 +1,18 @@
+import NDK from "@nostr-dev-kit/ndk";
+import { useAutoLogin, useNostrHooks } from "nostr-hooks";
+import { RELAYS } from "./Constants.tsx";
 import { DiceNavBar } from "./DiceNavBar.tsx";
 import { NostrGame } from "./NostrGame.tsx";
 import { NostrSocial } from "./NostrSocial.tsx";
 
+const customNDK = new NDK({
+  explicitRelayUrls: RELAYS,
+});
+
 function App() {
+  useNostrHooks(customNDK);
+  useAutoLogin();
+
   return (
     <>
       <DiceNavBar />

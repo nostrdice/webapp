@@ -60,7 +60,7 @@ export function NostrGame() {
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
       }).map(note => {
-        return <GameCard note={note} />;
+        return <GameCard note={note} key={note.id} />;
       })}
     </div>
   );
