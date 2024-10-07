@@ -1,8 +1,9 @@
+import { ChakraProvider, Grid, GridItem } from "@chakra-ui/react";
 import NDK from "@nostr-dev-kit/ndk";
 import { useAutoLogin, useNostrHooks } from "nostr-hooks";
 import { RELAYS } from "./Constants.tsx";
 import { DiceNavBar } from "./DiceNavBar.tsx";
-import { NostrGame } from "./NostrGame.tsx";
+import { NostrGame } from "./game/NostrGame.tsx";
 import { NostrSocial } from "./social/NostrSocial.tsx";
 
 const customNDK = new NDK({
@@ -14,19 +15,21 @@ function App() {
   useAutoLogin();
 
   return (
-    <>
+    <ChakraProvider>
       <DiceNavBar />
-      <div className="flex flex-row">
-        <div className="flex w-11/12 flex-col md:flex-row">
-          <div className="my-2 size-full rounded-md border-2 border-dashed md:mx-2 md:w-9/12">
-            <NostrGame />
-          </div>
-          <div className="my-2 size-full max-h-screen overflow-y-auto rounded-md border-2 border-dashed md:mx-2 md:w-3/12">
-            <NostrSocial />
-          </div>
-        </div>
-      </div>
-    </>
+      <Grid
+        templateColumns="repeat(4, 1fr)"
+        gap={4}
+        h="200vh"
+      >
+        <GridItem colSpan={3} maxH="200vh" overflow="auto">
+          <NostrGame />
+        </GridItem>
+        <GridItem colSpan={1} maxH="100%" overflow="auto">
+          <NostrSocial />
+        </GridItem>
+      </Grid>
+    </ChakraProvider>
   );
 }
 
