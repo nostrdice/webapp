@@ -27,7 +27,7 @@ function App() {
         <DiceNavBar />
       </Box>
       <WithBackgroundImage />
-      <Box p={4} bg="gray.50" height={"100vh"} overflowY="auto">
+      <Box p={4} bg="gray.50" overflowY="auto">
         <NostrGame />
       </Box>
       <Spacer />
