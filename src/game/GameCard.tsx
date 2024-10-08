@@ -1,4 +1,4 @@
-import { Box, Button, Card, CardBody, CardFooter, Heading, Stack, Text } from "@chakra-ui/react";
+import { Button, Card, CardBody, CardFooter, Heading, Stack, Text } from "@chakra-ui/react";
 import { NDKEvent } from "@nostr-dev-kit/ndk";
 import { FaBolt } from "react-icons/fa6";
 
@@ -37,11 +37,8 @@ export function GameCard({ note }: GameCardProps) {
       direction={{ base: "column", sm: "row" }}
       overflow="hidden"
       variant="outline"
+      size={"sm"}
     >
-      <Box maxWidth={"100%"} display="flex" justifyContent="center" alignItems="center" height="100%">
-        <GlowingCircle emoji={extractFirstEmoji(note.content)} />
-      </Box>
-
       <Stack>
         <CardBody>
           <Heading size="md">{header}</Heading>
@@ -57,43 +54,3 @@ export function GameCard({ note }: GameCardProps) {
     </Card>
   );
 }
-
-const extractFirstEmoji = (text: string) => {
-  // this is ugly as a stray cat in the dumpster but works 😅
-  return text.split(" ")[0];
-};
-
-interface GlowingCircleProps {
-  emoji: string | null;
-  bg?: string;
-  size?: string;
-}
-
-const GlowingCircle: React.FC<GlowingCircleProps> = ({
-  emoji = "✨",
-  bg = "blue.50",
-  size = "100px",
-}) => {
-  return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      bg={bg}
-      borderRadius="full"
-      border="1px solid blue"
-      boxShadow={`0 0 20px ${bg}`}
-      width={size}
-      height={size}
-      textAlign="center"
-      fontSize="3xl"
-      lineHeight={size}
-      color="white"
-      _hover={{
-        boxShadow: `0 0 30px ${bg}`,
-      }}
-    >
-      <Text>{emoji}</Text>
-    </Box>
-  );
-};

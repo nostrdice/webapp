@@ -1,4 +1,4 @@
-import { VStack } from "@chakra-ui/react";
+import { HStack } from "@chakra-ui/react";
 import { useProfile, useSubscribe } from "nostr-hooks";
 import { useMemo } from "react";
 import { NOSTR_DICE_SOCIAL_PK, RELAYS } from "../Constants.tsx";
@@ -19,7 +19,7 @@ export function NostrSocial({ since }: NostrSocialProps) {
   const { profile } = useProfile({ pubkey: NOSTR_DICE_SOCIAL_PK });
 
   return (
-    <VStack
+    <HStack
       spacing={4}
       align="flex-start"
     >
@@ -28,6 +28,6 @@ export function NostrSocial({ since }: NostrSocialProps) {
       }).map(note => {
         return <SocialCard note={note} key={note.id} profile={profile} />;
       })}
-    </VStack>
+    </HStack>
   );
 }

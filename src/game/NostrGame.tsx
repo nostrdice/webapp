@@ -12,7 +12,7 @@ export function NostrGame() {
   });
 
   return (
-    <SimpleGrid columns={[1, null, 2]} gap={6}>
+    <SimpleGrid columns={{ sm: 1, md: 2, xl: 3 }} gap={6}>
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
       }).map(note => {

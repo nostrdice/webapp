@@ -1,4 +1,4 @@
-import { ChakraProvider, Grid, GridItem } from "@chakra-ui/react";
+import { Box, ChakraProvider, Grid, GridItem } from "@chakra-ui/react";
 import NDK from "@nostr-dev-kit/ndk";
 import { useAutoLogin, useNostrHooks } from "nostr-hooks";
 import { RELAYS } from "./Constants.tsx";
@@ -24,15 +24,25 @@ function App() {
     <ChakraProvider>
       <DiceNavBar />
       <Grid
-        templateColumns="repeat(4, 1fr)"
-        gap={4}
-        h="200vh"
+        templateRows="1fr auto"
+        height="100vh"
+        width="100%"
       >
-        <GridItem colSpan={3} maxH="200vh" overflow="auto">
-          <NostrGame />
+        <GridItem overflowY="auto">
+          <Box p={4} bg="gray.50" height={"100%"}>
+            <NostrGame />
+          </Box>
         </GridItem>
-        <GridItem colSpan={1} maxH="100%" overflow="auto">
-          <NostrSocial since={since} />
+        <GridItem overflowX="auto">
+          <Box
+            overflowX="auto"
+            p={4}
+            bg="gray.200"
+          >
+            <Box display="inline-block" height="100hv">
+              <NostrSocial since={since} />
+            </Box>
+          </Box>
         </GridItem>
       </Grid>
     </ChakraProvider>
