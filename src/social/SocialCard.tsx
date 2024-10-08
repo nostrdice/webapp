@@ -10,7 +10,7 @@ export interface SocialCardProps {
 
 export function SocialCard({ note, profile }: SocialCardProps) {
   return (
-    <Card variant={"elevated"}>
+    <Card variant={"outline"} size={"sm"} minWidth="500px">
       <CardHeader>
         <Heading size="md">
           <HStack>

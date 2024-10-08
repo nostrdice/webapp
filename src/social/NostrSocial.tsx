@@ -1,13 +1,18 @@
-import { StackDivider, VStack } from "@chakra-ui/react";
+import { VStack } from "@chakra-ui/react";
 import { useProfile, useSubscribe } from "nostr-hooks";
+import { useMemo } from "react";
 import { NOSTR_DICE_SOCIAL_PK, RELAYS } from "../Constants.tsx";
 import { SocialCard } from "./SocialCard.tsx";
 
-const filter = [{ authors: [NOSTR_DICE_SOCIAL_PK], kinds: [1] }];
+export interface NostrSocialProps {
+  since: number;
+}
 
-export function NostrSocial() {
+export function NostrSocial({ since }: NostrSocialProps) {
+  const filters = useMemo(() => [{ authors: [NOSTR_DICE_SOCIAL_PK], kinds: [1], limit: 10, since }], [since]);
+
   const { events } = useSubscribe({
-    filters: filter,
+    filters: filters,
     relays: RELAYS,
   });
 
@@ -15,7 +20,6 @@ export function NostrSocial() {
 
   return (
     <VStack
-      divider={<StackDivider borderColor="gray.200" />}
       spacing={4}
       align="flex-start"
     >
