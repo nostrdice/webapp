@@ -9,6 +9,7 @@ export function NostrGame() {
   const { events } = useSubscribe({
     filters: filter,
     relays: RELAYS,
+    fetchProfiles: true,
   });
 
   return (
@@ -16,7 +17,7 @@ export function NostrGame() {
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
       }).map(note => {
-        return <GameCard note={note} key={note.id} />;
+        return <GameCard note={note} key={note.id} gameProfile={note.author.profile} />;
       })}
     </SimpleGrid>
   );

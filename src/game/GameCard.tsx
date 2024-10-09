@@ -1,12 +1,15 @@
 import { Button, Card, CardBody, CardFooter, Heading, Stack, Text } from "@chakra-ui/react";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { useState } from "react";
 import { FaBolt } from "react-icons/fa6";
+import ZapEventModal from "./ZapDialog.tsx";
 
 export interface GameCardProps {
   note: NDKEvent;
+  gameProfile?: NDKUserProfile | undefined;
 }
 
-export function GameCard({ note }: GameCardProps) {
+export function GameCard({ note, gameProfile }: GameCardProps) {
   let header = "";
   if (note.content.includes("1.05x")) {
     header = "1.05x";
@@ -32,6 +35,8 @@ export function GameCard({ note }: GameCardProps) {
     header = "1000x";
   }
 
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <Card
       direction={{ base: "column", sm: "row" }}
@@ -39,6 +44,15 @@ export function GameCard({ note }: GameCardProps) {
       variant="outline"
       size={"sm"}
     >
+      <div>
+        <ZapEventModal
+          gameProfile={gameProfile}
+          event={note}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          multiplier={header}
+        />
+      </div>
       <Stack>
         <CardBody>
           <Heading size="md">{header}</Heading>
@@ -46,7 +60,7 @@ export function GameCard({ note }: GameCardProps) {
         </CardBody>
 
         <CardFooter>
-          <Button variant="solid" colorScheme="blue">
+          <Button variant="solid" colorScheme="blue" onClick={() => setIsOpen(true)}>
             Zap <FaBolt />
           </Button>
         </CardFooter>

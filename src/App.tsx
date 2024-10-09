@@ -1,18 +1,13 @@
 import { Box, ChakraProvider, Spacer } from "@chakra-ui/react";
-import NDK from "@nostr-dev-kit/ndk";
 import { useAutoLogin, useNostrHooks } from "nostr-hooks";
-import { RELAYS } from "./Constants.tsx";
+import { CUSTOM_NDK } from "./CustomNDK.tsx";
 import { DiceNavBar } from "./DiceNavBar.tsx";
 import { NostrGame } from "./game/NostrGame.tsx";
 import { NostrSocial } from "./social/NostrSocial.tsx";
 import WithBackgroundImage from "./WithBackgroundImage.tsx";
 
-const customNDK = new NDK({
-  explicitRelayUrls: RELAYS,
-});
-
 function App() {
-  useNostrHooks(customNDK);
+  useNostrHooks(CUSTOM_NDK);
   useAutoLogin();
 
   const currentDate = new Date();
