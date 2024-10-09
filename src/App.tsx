@@ -14,7 +14,6 @@ function App() {
   currentDate.setHours(0, 0, 0, 0);
   currentDate.setMonth(currentDate.getMonth() - 1);
 
-  const since = currentDate.getTime() / 1000;
   return (
     <ChakraProvider>
       <Box sx={{ position: "sticky", top: "0", zIndex: "1" }}>
