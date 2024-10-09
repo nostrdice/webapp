@@ -3,7 +3,6 @@ import { useAutoLogin, useNostrHooks } from "nostr-hooks";
 import { CUSTOM_NDK } from "./CustomNDK.tsx";
 import { DiceNavBar } from "./DiceNavBar.tsx";
 import { NostrGame } from "./game/NostrGame.tsx";
-import { NostrSocial } from "./social/NostrSocial.tsx";
 import WithBackgroundImage from "./WithBackgroundImage.tsx";
 
 function App() {
@@ -33,7 +32,7 @@ function App() {
         height="100hv"
         sx={{ position: "sticky", bottom: "0", zIndex: "1" }}
       >
-        <NostrSocial since={since} />
+        {/*<NostrSocial since={since} />*/}
       </Box>
     </ChakraProvider>
   );
