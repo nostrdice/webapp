@@ -2,6 +2,7 @@ import { Button, Card, CardBody, CardFooter, Heading, Stack, Text } from "@chakr
 import { NDKEvent, NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { useState } from "react";
 import { FaBolt } from "react-icons/fa6";
+import { extractMultiplier } from "./ExtractMultiplier.tsx";
 import ZapEventModal from "./ZapDialog.tsx";
 
 export interface GameCardProps {
@@ -10,30 +11,7 @@ export interface GameCardProps {
 }
 
 export function GameCard({ note, gameProfile }: GameCardProps) {
-  let header = "";
-  if (note.content.includes("1.05x")) {
-    header = "1.05x";
-  } else if (note.content.includes("1.1x")) {
-    header = "1.1x";
-  } else if (note.content.includes("1.33")) {
-    header = "1.33";
-  } else if (note.content.includes("1.5")) {
-    header = "1.5";
-  } else if (note.content.includes("2x")) {
-    header = "2x";
-  } else if (note.content.includes("3x")) {
-    header = "3x";
-  } else if (note.content.includes("5x")) {
-    header = "5x";
-  } else if (note.content.includes("10x")) {
-    header = "10x";
-  } else if (note.content.includes("100x")) {
-    header = "100x";
-  } else if (note.content.includes("50x")) {
-    header = "50x";
-  } else if (note.content.includes("1000x")) {
-    header = "1000x";
-  }
+  const header = extractMultiplier(note.content);
 
   const [isOpen, setIsOpen] = useState(false);
 
