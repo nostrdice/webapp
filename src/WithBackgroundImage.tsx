@@ -18,7 +18,6 @@ import NDK from "@nostr-dev-kit/ndk";
 import { AiFillThunderbolt, AiOutlineThunderbolt } from "react-icons/ai";
 import { FaMessage, FaRegMessage } from "react-icons/fa6";
 import { DmEventStream } from "./zapStream/DmEventStream.tsx";
-import { ZapEventStream } from "./zapStream/ZapEventStream.tsx";
 
 interface WithBackgroundImageProps {
   ndk: NDK;
@@ -147,7 +146,8 @@ function CustomTabs({ ndk }: CustomTabsProps) {
       </TabList>
       <TabPanels>
         <TabPanel>
-          <ZapEventStream ndk={ndk} />
+          {/*<ZapEventStream ndk={ndk} />*/}
+          <>TODO</>
         </TabPanel>
         <TabPanel>
           <DmEventStream ndk={ndk} />
