@@ -1,4 +1,4 @@
-import { SimpleGrid } from "@chakra-ui/react";
+import {SimpleGrid, Spinner} from "@chakra-ui/react";
 import { useSubscribe } from "nostr-hooks";
 import { useMemo } from "react";
 import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
@@ -12,6 +12,10 @@ export function NostrGame() {
     relays: RELAYS,
     fetchProfiles: true,
   });
+
+  if (events.length === 0) {
+    return <Spinner/>;
+  }
 
   return (
     <SimpleGrid columns={{ sm: 1, md: 2, xl: 3 }} gap={6}>
