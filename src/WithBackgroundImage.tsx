@@ -1,11 +1,12 @@
 import { Box, Button, Flex, Stack, useBreakpointValue, VStack } from "@chakra-ui/react";
-import { ZapEventStream } from "./ZapEventStream.tsx";
+import NDK from "@nostr-dev-kit/ndk";
+import { ZapEventStream } from "./zapStream/ZapEventStream.tsx";
 
 interface WithBackgroundImageProps {
-  since: Date;
+  ndk: NDK;
 }
 
-export default function WithBackgroundImage({ since }: WithBackgroundImageProps) {
+export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
   const handleClick = () => {
     window.open("https://github.com/NostrDice/nostrdice/blob/main/GAME.md", "_blank");
   };
@@ -49,12 +50,12 @@ export default function WithBackgroundImage({ since }: WithBackgroundImageProps)
         right={0}
         top={0}
         bottom={0}
-        width="350px"
+        width="450px"
         bg="rgba(0, 0, 0, 0.5)"
         overflowY="auto"
         padding={4}
       >
-        <ZapEventStream since={since} />
+        <ZapEventStream ndk={ndk} />
       </Box>
     </Flex>
   );

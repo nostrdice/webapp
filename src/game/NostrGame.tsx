@@ -1,13 +1,14 @@
 import { SimpleGrid } from "@chakra-ui/react";
 import { useSubscribe } from "nostr-hooks";
+import { useMemo } from "react";
 import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
 import { GameCard } from "./GameCard.tsx";
 
-const filter = [{ authors: [NOSTR_DICE_GAME_PK], kinds: [1] }];
-
 export function NostrGame() {
+  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [1] }], [NOSTR_DICE_GAME_PK]);
+
   const { events } = useSubscribe({
-    filters: filter,
+    filters: filters,
     relays: RELAYS,
     fetchProfiles: true,
   });

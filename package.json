@@ -21,6 +21,7 @@
     "@getalby/bitcoin-connect-react": "^3.6.2",
     "flowbite-react": "^0.8.0",
     "framer-motion": "^11.11.1",
+    "light-bolt11-decoder": "^3.2.0",
     "lucide-react": "^0.451.0",
     "nostr-hooks": "^2.9.11",
     "nostr-tools": "^2.7.2",
