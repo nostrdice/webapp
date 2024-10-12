@@ -6,13 +6,8 @@ import { DiceNavBar } from "./DiceNavBar.tsx";
 import { NostrGame } from "./game/NostrGame.tsx";
 import WithBackgroundImage from "./WithBackgroundImage.tsx";
 
-const currentDate = new Date();
-currentDate.setDate(1);
-currentDate.setHours(0, 0, 0, 0);
-currentDate.setMonth(currentDate.getMonth() - 2);
-
 function App() {
-  const ndk = useMemo(() => CUSTOM_NDK, [CUSTOM_NDK]);
+  const ndk = useMemo(() => CUSTOM_NDK, []);
   useNostrHooks(ndk);
   useAutoLogin();
 

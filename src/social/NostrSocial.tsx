@@ -25,8 +25,8 @@ export function NostrSocial({ since }: NostrSocialProps) {
     >
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
-      }).map(note => {
-        return <SocialCard note={note} key={note.id} profile={profile} />;
+      }).map((note, index) => {
+        return <SocialCard note={note} key={note.id + index} profile={profile} />;
       })}
     </HStack>
   );

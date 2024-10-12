@@ -17,8 +17,8 @@ export function NostrGame() {
     <SimpleGrid columns={{ sm: 1, md: 2, xl: 3 }} gap={6}>
       {events.sort((a, b) => {
         return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
-      }).map(note => {
-        return <GameCard note={note} key={note.id} gameProfile={note.author.profile} />;
+      }).map((note, index) => {
+        return <GameCard note={note} key={note.id + index} gameProfile={note.author.profile} />;
       })}
     </SimpleGrid>
   );

@@ -12,7 +12,7 @@ interface ZapEventStreamProps {
 }
 
 export function ZapEventStream({ ndk }: ZapEventStreamProps) {
-  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [9735], limit: 100 }], [NOSTR_DICE_GAME_PK]);
+  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [9735] }], []);
 
   const { events } = useSubscribe({
     filters: filters,
