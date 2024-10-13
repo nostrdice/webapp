@@ -1,4 +1,4 @@
-import {SimpleGrid, Spinner} from "@chakra-ui/react";
+import { SimpleGrid, Spinner } from "@chakra-ui/react";
 import { useSubscribe } from "nostr-hooks";
 import { useMemo } from "react";
 import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
@@ -14,7 +14,7 @@ export function NostrGame() {
   });
 
   if (events.length === 0) {
-    return <Spinner/>;
+    return <Spinner />;
   }
 
   return (

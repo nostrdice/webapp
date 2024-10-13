@@ -1,15 +1,16 @@
 import { Box, Button, Text, VStack } from "@chakra-ui/react";
 import NDK, { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
 import { useActiveUser, useSubscribe } from "nostr-hooks";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
 
 interface ZapEventStreamProps {
   ndk: NDK;
 }
 
+const filters = [{ authors: [NOSTR_DICE_GAME_PK], kinds: [4] }];
+
 export function DmEventStream({ ndk }: ZapEventStreamProps) {
-  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [4] }], []);
   const { activeUser } = useActiveUser();
 
   const { events } = useSubscribe({
