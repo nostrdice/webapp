@@ -142,7 +142,7 @@ function CustomTabs({ ndk }: CustomTabsProps) {
           Latest Zaps
         </CustomTab>
         <CustomTab isFitted variant="enclosed" _selected={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}>
-          Messages
+          Personal results
         </CustomTab>
       </TabList>
       <TabPanels>
