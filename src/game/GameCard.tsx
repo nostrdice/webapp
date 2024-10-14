@@ -20,7 +20,7 @@ export function GameCard({ note, gameProfile }: GameCardProps) {
       direction={{ base: "column", sm: "row" }}
       overflow="hidden"
       variant="outline"
-      size={"sm"}
+      size={"xs"}
     >
       <div>
         <ZapEventModal

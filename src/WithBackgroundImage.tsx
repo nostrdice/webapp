@@ -34,10 +34,7 @@ export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
       w={"full"}
       h={"30vh"}
       position="relative"
-      backgroundImage={
-        // TODO: dynamically fetch this from the profile
-        "url(https://m.primal.net/JikZ.png)"
-      }
+      backgroundImage={"url(/social-banner.png)"}
       backgroundSize={"cover"}
       backgroundPosition={"center center"}
     >
@@ -48,13 +45,49 @@ export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
       >
         <Box padding={"4vh"}>
           <Stack maxW={"2xl"} align={"flex-start"} spacing={6}>
-            <Stack direction={"row"}>
-              <Button
-                bg={"blue.400"}
-                rounded={"full"}
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                textAlign="center"
+                width="100%"
+            >
+              <Text
+                textAlign="center"
                 color={"white"}
-                _hover={{ bg: "blue.500" }}
-                onClick={handleClick}
+                fontWeight={700}
+                lineHeight={1.2}
+                fontSize={useBreakpointValue({ base: "5xl", md: "8xl" })}
+              >
+                NostrDice
+              </Text>
+            </Box>
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                textAlign="center"
+                width="100%"
+            >
+              <Text
+                  width="100%"
+                  textAlign="center"
+                  color="white"
+                  fontWeight={700}
+                  lineHeight={1.2}
+                  fontSize={useBreakpointValue({ base: "md", md: "2xl" })}
+              >
+                The legend is back. Only on Nostr.
+              </Text>
+            </Box>
+
+            <Stack direction={"row"} justifyContent="center" width="100%">
+              <Button
+                  bg={"blue.400"}
+                  rounded={"full"}
+                  color={"white"}
+                  _hover={{ bg: "blue.500" }}
+                  onClick={handleClick}
               >
                 How it works
               </Button>
