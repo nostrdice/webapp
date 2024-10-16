@@ -29,7 +29,7 @@ export function ZapEventStream() {
 
     if (!subscribed && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
-      const filter = new Filter().author(pubkey).kind(new Kind(9735));
+      const filter = new Filter().author(pubkey).kind(new Kind(9735)).limit(20);
       // TODO: use async hook here
       subscribe(eventId, filter, handleEvent).then(() => {
         setSubscribed(true);

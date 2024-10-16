@@ -35,7 +35,7 @@ export function DmEventStream() {
 
     if (!subscribed && activeUser && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
-      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4));
+      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4)).limit(20);
       subscribe(eventId, filter, handleEvent).then(() => {
         setSubscribed(true);
       });
