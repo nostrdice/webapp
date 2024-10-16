@@ -13,10 +13,9 @@ import {
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
-import { Duration, EventSource, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
-import { useState } from "react";
+import { Event, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
+import { useCallback, useEffect, useState } from "react";
 import { FaBolt } from "react-icons/fa6";
-import { useAsync } from "react-use";
 import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
 import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 import { extractMultiplier } from "./ExtractMultiplier.tsx";
@@ -51,32 +50,44 @@ const indexToMultiplier = (index: number) => {
 };
 
 const OddsMultiplierSelector = () => {
+  const { subscribe, unsubscribe, initialized } = useNostrClient();
   const [selectedSliderIndex, setSelectedSliderIndex] = useState(5);
   const [selectedMultiplier, setSelectedMultiplier] = useState(indexToMultiplier(5)!);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { client, initialized } = useNostrClient();
+  const [subscribed, setSubscribed] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
 
-  const { loading, value: maybeEvents, error } = useAsync(async () => {
-    if (client && initialized) {
+  const handleEvent = useCallback((event: Event) => {
+    setEvents((prevEvents) => {
+      const eventExists = prevEvents.some((prevEvent) => prevEvent.id.toHex() === event.id.toHex());
+
+      if (!eventExists) {
+        return [...prevEvents, event];
+      }
+      return prevEvents;
+    });
+  }, []);
+
+  useEffect(() => {
+    const eventId = "game-notes-event-id";
+
+    if (!subscribed && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
       const filter = new Filter().author(pubkey).kind(new Kind(1));
-      const source = EventSource.relays(Duration.fromSecs(10));
-      return client!.getEventsOf([filter], source);
-    } else {
-      return [];
+      subscribe(eventId, filter, handleEvent).then(() => {
+        setSubscribed(true);
+      });
     }
-  }, [client, initialized]);
 
-  if (loading) {
+    return () => {
+      unsubscribe(eventId);
+    };
+  }, [handleEvent, initialized]);
+
+  if (!initialized) {
     return <Spinner />;
   }
-
-  if (error) {
-    console.error(`Failed fetching game notes here`, error);
-  }
-
-  const events = maybeEvents ?? [];
 
   const handleSliderChange = (value: number) => {
     setSelectedMultiplier(indexToMultiplier(value));

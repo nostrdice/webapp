@@ -88,7 +88,8 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
     const sorted = existingEvents?.sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs());
 
     if (sorted?.length && sorted?.length > 0) {
-      for (let i = 0; i < 20; i++) {
+      const boundary = Math.min(20, sorted.length);
+      for (let i = 0; i < boundary; i++) {
         callback(sorted[i]);
       }
       const newest = sorted[0].createdAt;
