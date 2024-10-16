@@ -1,28 +1,43 @@
 import { SimpleGrid, Spinner } from "@chakra-ui/react";
-import { useSubscribe } from "nostr-hooks";
-import { useMemo } from "react";
-import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
+import { Duration, EventSource, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
+import { useAsync } from "react-use";
+import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
+import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 import { GameCard } from "./GameCard.tsx";
 
 export function NostrGame() {
-  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [1] }], [NOSTR_DICE_GAME_PK]);
+  const { client, initialized } = useNostrClient();
 
-  const { events } = useSubscribe({
-    filters: filters,
-    relays: RELAYS,
-    fetchProfiles: true,
-  });
+  const { loading, value: events, error } = useAsync(async () => {
+    if (initialized) {
+      const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
+      const filter = new Filter().author(pubkey).kind(new Kind(1));
+      const source = EventSource.relays(Duration.fromSecs(10));
+      const events = await client!.getEventsOf([filter], source);
+      if (events.length > 0) {
+        return events;
+      } else {
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }, [client, initialized]);
 
-  if (events.length === 0) {
+  if (loading) {
     return <Spinner />;
+  }
+
+  if (error) {
+    console.error(`Failed fetching game notes `, error);
   }
 
   return (
     <SimpleGrid columns={{ sm: 1, md: 2, xl: 3 }} gap={6}>
-      {events.sort((a, b) => {
-        return (a.created_at && b.created_at) ? b.created_at - a.created_at : 0;
+      {events && events.sort((a, b) => {
+        return (a.createdAt && b.createdAt) ? b.createdAt.asSecs() - a.createdAt.asSecs() : 0;
       }).map((note, index) => {
-        return <GameCard note={note} key={note.id + index} gameProfile={note.author.profile} />;
+        return <GameCard note={note} key={note.id.toHex() + index} />;
       })}
     </SimpleGrid>
   );

@@ -1,97 +1,98 @@
-import { Avatar, Box, HStack, Text, VStack } from "@chakra-ui/react";
-import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
+import { Avatar, Box, Center, HStack, Spinner, Text, Tooltip, VStack } from "@chakra-ui/react";
+import { Event, EventId, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
 import { decode, Section } from "light-bolt11-decoder";
-import { useProfile, useSubscribe } from "nostr-hooks";
-import { useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAsync } from "react-use";
-import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
+import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
 import { extractMultiplier } from "../game/ExtractMultiplier.tsx";
+import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 
-interface ZapEventStreamProps {
-  ndk: NDK;
-}
+export function ZapEventStream() {
+  const { subscribe, unsubscribe, initialized } = useNostrClient();
 
-export function ZapEventStream({ ndk }: ZapEventStreamProps) {
-  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [9735] }], []);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [subscribed, setSubscribed] = useState(false);
 
-  const { events } = useSubscribe({
-    filters: filters,
-    relays: RELAYS,
-    fetchProfiles: true,
-  });
+  const handleEvent = useCallback((event: Event) => {
+    setEvents((prevEvents) => {
+      const eventExists = prevEvents.some((prevEvent) => prevEvent.id.toHex() === event.id.toHex());
+
+      if (!eventExists) {
+        return [...prevEvents, event];
+      }
+      return prevEvents;
+    });
+  }, []);
+
+  useEffect(() => {
+    const eventId = "zap-event-id";
+
+    if (!subscribed && initialized) {
+      const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
+      const filter = new Filter().author(pubkey).kind(new Kind(9735)).limit(20);
+      // TODO: use async hook here
+      subscribe(eventId, filter, handleEvent).then(() => {
+        setSubscribed(true);
+      });
+    }
+
+    return () => {
+      unsubscribe(eventId);
+    };
+  }, [handleEvent, initialized]);
 
   const zapReceipts = events.sort((a, b) => {
-    if (!a.created_at) {
-      return -1;
-    }
-    if (!b.created_at) {
-      return 1;
-    }
-    return b.created_at - a.created_at;
+    return b.createdAt.asSecs() - a.createdAt.asSecs();
   });
+
+  const loading = zapReceipts.length === 0;
 
   return (
     <VStack spacing={4} align="stretch">
+      {loading
+        ? (
+          <Box bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
+            <Center>
+              <Spinner />
+            </Center>
+          </Box>
+        )
+        : ""}
+
       {zapReceipts.map((event, index) => (
         <Box key={index} bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
-          <EventCard zapReceipt={event} ndk={ndk} />
+          <EventCard zapReceipt={event} />
         </Box>
       ))}
     </VStack>
   );
 }
 
-interface MultiplierProps {
-  zappedNoteId: string;
-  ndk: NDK;
-}
-
-function Multiplier({ zappedNoteId, ndk }: MultiplierProps) {
-  const { loading, value: zappedNote, error } = useAsync(async () => {
-    return await ndk.fetchEvent(zappedNoteId);
-  }, [zappedNoteId]);
-
-  if (loading) {
-    return <></>;
-  }
-
-  if (error) {
-    console.log(`Failed fetching event ${error}`);
-  }
-
-  const multiplier = extractMultiplier(zappedNote?.content ?? "");
-
-  if (multiplier) {
-    return <Text color="white" fontSize="sm">{multiplier} chance</Text>;
-  } else {
-    return <></>;
-  }
-}
-
 interface EventCardProps {
-  zapReceipt: NDKEvent;
-  ndk: NDK;
+  zapReceipt: Event;
 }
 
-const EventCard = ({ zapReceipt, ndk }: EventCardProps) => {
-  const pTag = findArrayWithTag(zapReceipt.tags, "P") ?? [];
-  const zapperPubkey = pTag[1];
+const EventCard = ({ zapReceipt }: EventCardProps) => {
+  const pTag = zapReceipt.getTagContent("P");
+  const zapperPubkey = pTag!;
 
-  const eTag = findArrayWithTag(zapReceipt.tags, "e") ?? [];
-  const zappedNoteId = eTag[1];
+  const eTag = zapReceipt.getTagContent("e");
+  const zappedNoteId = eTag!;
 
-  const invoiceTag = findArrayWithTag(zapReceipt.tags, "bolt11") ?? [];
-  const invoice = invoiceTag[1];
+  const invoiceTag = zapReceipt.getTagContent("bolt11");
+  const invoice = invoiceTag!;
 
   const decoded = decode(invoice);
   const amount = findAmountSection(decoded.sections);
 
   return (
-    <HStack>
-      <Profile pubkey={zapperPubkey} />
-      <Text>{amount?.value ? (amount?.value / 1000) : ""} {amount ? "sats" : ""}</Text>
-      <Multiplier zappedNoteId={zappedNoteId} ndk={ndk} />
-    </HStack>
+    <Tooltip label={zapReceipt.id.toBech32()}>
+      <HStack>
+        <Profile pubkey={zapperPubkey} />
+        <Text>{amount?.value ? (amount?.value / 1000) : ""} {amount ? "sats" : ""}</Text>
+        <Multiplier zappedNoteId={zappedNoteId} />
+      </HStack>
+    </Tooltip>
   );
 };
 
@@ -100,26 +101,33 @@ interface ProfileProps {
 }
 
 function Profile({ pubkey }: ProfileProps) {
-  const pk = useMemo(() => pubkey, [pubkey]);
-  const { profile } = useProfile({ pubkey: pk });
+  const { lookupMetadata, initialized } = useNostrClient();
 
-  const elipsed = pk.slice(0, 4) + `...` + pk.slice(pk.length - 4, pk.length);
+  const { value: metadata, error } = useAsync(async () => {
+    if (pubkey && initialized) {
+      return lookupMetadata(PublicKey.fromHex(pubkey)!);
+    } else {
+      return undefined;
+    }
+  }, [pubkey, initialized]);
+
+  if (error) {
+    console.error(`Failed fetching metadata of notes in zap stream `, error);
+  }
+
+  const elipsed = pubkey.slice(0, 4) + `...` + pubkey.slice(pubkey.length - 4, pubkey.length);
 
   return (
     <HStack>
       <Avatar
         size={"sm"}
-        src={profile?.image}
+        src={metadata?.getPicture()}
       />
       <Text color="white" fontSize="sm">
-        <strong>{profile?.name ?? elipsed}</strong>
+        <strong>{metadata?.getName() ?? elipsed}</strong>
       </Text>
     </HStack>
   );
-}
-
-function findArrayWithTag(arr: string[][], searchElement: string): string[] | undefined {
-  return arr.find(innerArr => innerArr.includes(searchElement));
 }
 
 function findAmountSection(sections: Section[]): { letters: string; value: number } | undefined {
@@ -133,4 +141,36 @@ function findAmountSection(sections: Section[]): { letters: string; value: numbe
     }
   }
   return undefined;
+}
+
+interface MultiplierProps {
+  zappedNoteId: string;
+}
+
+function Multiplier({ zappedNoteId }: MultiplierProps) {
+  const { lookupEvent, initialized } = useNostrClient();
+
+  const { loading, value: zappedNote, error } = useAsync(async () => {
+    if (initialized) {
+      return lookupEvent(EventId.fromHex(zappedNoteId));
+    } else {
+      return undefined;
+    }
+  }, [zappedNoteId, initialized]);
+
+  if (loading) {
+    return <></>;
+  }
+
+  if (error) {
+    console.log(`Failed fetching multiplier event ${error}`);
+  }
+
+  const multiplier = extractMultiplier(zappedNote?.content ?? "");
+
+  if (multiplier) {
+    return <Text color="white" fontSize="sm">{multiplier} chance</Text>;
+  } else {
+    return <></>;
+  }
 }

@@ -14,17 +14,12 @@ import {
   useTab,
   VStack,
 } from "@chakra-ui/react";
-import NDK from "@nostr-dev-kit/ndk";
 import { AiFillThunderbolt, AiOutlineThunderbolt } from "react-icons/ai";
 import { FaMessage, FaRegMessage } from "react-icons/fa6";
 import { DmEventStream } from "./zapStream/DmEventStream.tsx";
 import { ZapEventStream } from "./zapStream/ZapEventStream.tsx";
 
-interface WithBackgroundImageProps {
-  ndk: NDK;
-}
-
-export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
+export default function WithBackgroundImage() {
   const handleClick = () => {
     window.open("https://github.com/NostrDice/nostrdice/blob/main/GAME.md", "_blank");
   };
@@ -34,10 +29,7 @@ export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
       w={"full"}
       h={"30vh"}
       position="relative"
-      backgroundImage={
-        // TODO: dynamically fetch this from the profile
-        "url(https://m.primal.net/JikZ.png)"
-      }
+      backgroundImage={"url(/social-banner.png)"}
       backgroundSize={"cover"}
       backgroundPosition={"center center"}
     >
@@ -48,7 +40,43 @@ export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
       >
         <Box padding={"4vh"}>
           <Stack maxW={"2xl"} align={"flex-start"} spacing={6}>
-            <Stack direction={"row"}>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              textAlign="center"
+              width="100%"
+            >
+              <Text
+                textAlign="center"
+                color={"white"}
+                fontWeight={700}
+                lineHeight={1.2}
+                fontSize={useBreakpointValue({ base: "5xl", md: "8xl" })}
+              >
+                NostrDice
+              </Text>
+            </Box>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              textAlign="center"
+              width="100%"
+            >
+              <Text
+                width="100%"
+                textAlign="center"
+                color="white"
+                fontWeight={700}
+                lineHeight={1.2}
+                fontSize={useBreakpointValue({ base: "md", md: "2xl" })}
+              >
+                The legend is back. Only on Nostr.
+              </Text>
+            </Box>
+
+            <Stack direction={"row"} justifyContent="center" width="100%">
               <Button
                 bg={"blue.400"}
                 rounded={"full"}
@@ -73,14 +101,10 @@ export default function WithBackgroundImage({ ndk }: WithBackgroundImageProps) {
         overflowY="auto"
         padding={4}
       >
-        <CustomTabs ndk={ndk} />
+        <CustomTabs />
       </Box>
     </Flex>
   );
-}
-
-interface CustomTabsProps {
-  ndk: NDK;
 }
 
 const CustomTab = forwardRef((props, ref) => {
@@ -134,23 +158,23 @@ const CustomTab = forwardRef((props, ref) => {
   );
 });
 
-function CustomTabs({ ndk }: CustomTabsProps) {
+function CustomTabs() {
   return (
     <Tabs colorScheme="green">
       <TabList>
-        <CustomTab isFitted variant="enclosed" _selected={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}>
+        <CustomTab variant="enclosed" _selected={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}>
           Latest Zaps
         </CustomTab>
-        <CustomTab isFitted variant="enclosed" _selected={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}>
+        <CustomTab variant="enclosed" _selected={{ color: "white", bg: "rgba(255, 255, 255, 0.1)" }}>
           Personal results
         </CustomTab>
       </TabList>
       <TabPanels>
         <TabPanel>
-          <ZapEventStream ndk={ndk} />
+          <ZapEventStream />
         </TabPanel>
         <TabPanel>
-          <DmEventStream ndk={ndk} />
+          <DmEventStream />
         </TabPanel>
       </TabPanels>
     </Tabs>

@@ -1,87 +1,122 @@
-import { Box, Button, Text, VStack } from "@chakra-ui/react";
-import NDK, { NDKEvent, NDKUser } from "@nostr-dev-kit/ndk";
-import { useActiveUser, useSubscribe } from "nostr-hooks";
-import { useState } from "react";
-import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
+import { Box, Button, Center, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Event, Filter, Kind, NostrSigner, PublicKey } from "@rust-nostr/nostr-sdk";
+import { useCallback, useEffect, useState } from "react";
+import { useAsync } from "react-use";
+import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
+import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 
-interface ZapEventStreamProps {
-  ndk: NDK;
-}
+export function DmEventStream() {
+  const { client, subscribe, unsubscribe, initialized } = useNostrClient();
 
-const filters = [{ authors: [NOSTR_DICE_GAME_PK], kinds: [4] }];
+  const [events, setEvents] = useState<Event[]>([]);
+  const [subscribed, setSubscribed] = useState(false);
 
-export function DmEventStream({ ndk }: ZapEventStreamProps) {
-  const { activeUser } = useActiveUser();
+  const { value: nostrSigner, error } = useAsync(async () => {
+    return client?.signer();
+  }, [client]);
 
-  const { events } = useSubscribe({
-    filters: filters,
-    relays: RELAYS,
-    fetchProfiles: true,
+  const { value: activeUser, error: activeUserError } = useAsync(async () => {
+    return nostrSigner?.publicKey();
+  }, [nostrSigner]);
+
+  const handleEvent = useCallback((event: Event) => {
+    setEvents((prevEvents) => {
+      const eventExists = prevEvents.some((prevEvent) => prevEvent.id.toHex() === event.id.toHex());
+
+      if (!eventExists) {
+        return [...prevEvents, event];
+      }
+      return prevEvents;
+    });
+  }, []);
+
+  useEffect(() => {
+    const eventId = "dm-event-id";
+
+    if (!subscribed && activeUser && initialized) {
+      const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
+      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4));
+      subscribe(eventId, filter, handleEvent).then(() => {
+        setSubscribed(true);
+      });
+    }
+
+    return () => {
+      unsubscribe(eventId);
+    };
+  }, [activeUser, handleEvent, initialized]);
+
+  const eventsSorted = events.sort((a, b) => {
+    return b.createdAt.asSecs() - a.createdAt.asSecs();
   });
 
-  const dms = events.sort((a, b) => {
-    if (!a.created_at) {
-      return -1;
-    }
-    if (!b.created_at) {
-      return 1;
-    }
-    return b.created_at - a.created_at;
-  });
+  if (error) {
+    console.error(`Failed getting nostr signer `, error);
+  }
+  if (activeUserError) {
+    console.error(`Failed fetching active user `, error);
+  }
 
-  const filteredDms = dms.filter((dm) => {
-    if (!activeUser) {
-      console.log(`No active user`);
-      return false;
-    } else {
-      const receiver = findArrayWithTag(dm.tags, "p") ?? [];
-      const receiverPubkey = receiver[1];
-      return receiverPubkey === activeUser.pubkey;
-    }
-  });
-
-  console.log(`unfiltered dms ${dms.length}`);
-  console.log(`filtered dms ${filteredDms.length}`);
+  const eventsLoading = eventsSorted.length === 0;
 
   return (
     <VStack spacing={4} align="stretch">
-      {filteredDms.map((event, index) => (
-        <Box key={index} bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
-          <DmCard dm={event} ndk={ndk} />
-        </Box>
-      ))}
+      {eventsLoading
+        ? (
+          <Box bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
+            <Center>
+              <Spinner />
+            </Center>
+          </Box>
+        )
+        : ""}
+      {eventsSorted.map((event) => <DmCard key={event.id.toHex()} dm={event} nostrSigner={nostrSigner!} />)}
     </VStack>
   );
 }
 
 interface EventCardProps {
-  dm: NDKEvent;
-  ndk: NDK;
+  dm: Event;
+  nostrSigner: NostrSigner;
 }
 
-const DmCard = ({ dm, ndk }: EventCardProps) => {
+const DmCard = ({ dm, nostrSigner }: EventCardProps) => {
   const [decrypted, setDecrypted] = useState(false);
   const [decryptedContent, setDecryptedContent] = useState("");
 
   const onDecryptClick = async () => {
-    const decrypted = await ndk.signer?.decrypt(new NDKUser({ pubkey: dm.pubkey }), dm.content);
-    setDecrypted(true);
-    setDecryptedContent(decrypted ?? "");
+    try {
+      const decrypted = await nostrSigner.nip04Decrypt(dm.author, dm.content);
+      setDecrypted(true);
+      setDecryptedContent(decrypted ?? "");
+    } catch (error) {
+      console.error(`Failed decrypting ${error}`);
+    }
   };
 
   return (
-    <>
+    <Box bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
       {decrypted
-        ? <Text color={"white"}>{decryptedContent}</Text>
+        ? (
+          <VStack>
+            <Text color={"white"}>
+              {dm.createdAt.toHumanDatetime()}
+            </Text>
+            <Text color={"white"}>
+              {decryptedContent}
+            </Text>
+          </VStack>
+        )
         : (
           <Box display="flex" justifyContent="center" width="100%">
-            <Button onClick={onDecryptClick}>🔓Decrypt</Button>
+            <VStack>
+              <Text color={"white"}>
+                {dm.createdAt.toHumanDatetime()}
+              </Text>
+              <Button onClick={onDecryptClick}>🔓Decrypt</Button>
+            </VStack>
           </Box>
         )}
-    </>
+    </Box>
   );
 };
-
-function findArrayWithTag(arr: string[][], searchElement: string): string[] | undefined {
-  return arr.find(innerArr => innerArr.includes(searchElement));
-}
