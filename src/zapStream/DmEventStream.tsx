@@ -21,7 +21,7 @@ export function DmEventStream() {
 
   const handleEvent = useCallback((event: Event) => {
     setEvents((prevEvents) => {
-      const eventExists = prevEvents.some((prevEvent) => prevEvent.id === event.id);
+      const eventExists = prevEvents.some((prevEvent) => prevEvent.id.toHex() === event.id.toHex());
 
       if (!eventExists) {
         return [...prevEvents, event];
@@ -35,7 +35,7 @@ export function DmEventStream() {
 
     if (!subscribed && activeUser && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
-      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4)).limit(20);
+      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4));
       subscribe(eventId, filter, handleEvent).then(() => {
         setSubscribed(true);
       });
@@ -70,12 +70,7 @@ export function DmEventStream() {
           </Box>
         )
         : ""}
-      {eventsSorted.map((event, index) => (
-        <Box key={index} bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
-          {nostrSigner
-            && <DmCard dm={event} nostrSigner={nostrSigner!} />}
-        </Box>
-      ))}
+      {eventsSorted.map((event) => <DmCard key={event.id.toHex()} dm={event} nostrSigner={nostrSigner!} />)}
     </VStack>
   );
 }
@@ -100,7 +95,7 @@ const DmCard = ({ dm, nostrSigner }: EventCardProps) => {
   };
 
   return (
-    <>
+    <Box bg="rgba(255, 255, 255, 0.3)" p={3} borderRadius="md">
       {decrypted
         ? (
           <VStack>
@@ -122,6 +117,6 @@ const DmCard = ({ dm, nostrSigner }: EventCardProps) => {
             </VStack>
           </Box>
         )}
-    </>
+    </Box>
   );
 };

@@ -1,4 +1,4 @@
-import { Avatar, Box, Center, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Avatar, Box, Center, HStack, Spinner, Text, Tooltip, VStack } from "@chakra-ui/react";
 import { Event, EventId, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
 import { decode, Section } from "light-bolt11-decoder";
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,7 @@ export function ZapEventStream() {
 
   const handleEvent = useCallback((event: Event) => {
     setEvents((prevEvents) => {
-      const eventExists = prevEvents.some((prevEvent) => prevEvent.id === event.id);
+      const eventExists = prevEvents.some((prevEvent) => prevEvent.id.toHex() === event.id.toHex());
 
       if (!eventExists) {
         return [...prevEvents, event];
@@ -86,11 +86,13 @@ const EventCard = ({ zapReceipt }: EventCardProps) => {
   const amount = findAmountSection(decoded.sections);
 
   return (
-    <HStack>
-      <Profile pubkey={zapperPubkey} />
-      <Text>{amount?.value ? (amount?.value / 1000) : ""} {amount ? "sats" : ""}</Text>
-      <Multiplier zappedNoteId={zappedNoteId} />
-    </HStack>
+    <Tooltip label={zapReceipt.id.toBech32()}>
+      <HStack>
+        <Profile pubkey={zapperPubkey} />
+        <Text>{amount?.value ? (amount?.value / 1000) : ""} {amount ? "sats" : ""}</Text>
+        <Multiplier zappedNoteId={zappedNoteId} />
+      </HStack>
+    </Tooltip>
   );
 };
 
