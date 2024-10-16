@@ -14,24 +14,26 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { requestProvider } from "@getalby/bitcoin-connect-react";
-import { NDKEvent, NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { Event, PublicKey, ZapDetails, ZapEntity, ZapType } from "@rust-nostr/nostr-sdk";
 import { X } from "lucide-react";
-import { useNdk } from "nostr-hooks";
 import React, { useState } from "react";
+import { useAsync } from "react-use";
+import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 
 interface ZapEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  gameProfile?: NDKUserProfile | undefined;
-  event: NDKEvent;
+  gameProfilePubkey?: PublicKey | undefined;
+  event: Event;
   multiplier: string;
 }
 
-const ZapEventModal = ({ isOpen, onClose, gameProfile, event, multiplier }: ZapEventModalProps) => {
+const ZapEventModal = ({ isOpen, onClose, gameProfilePubkey, event, multiplier }: ZapEventModalProps) => {
   const [amount, setAmount] = useState(21);
   const [comment, setComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const { client, lookupMetadata, initialized } = useNostrClient();
 
   function onAmountChange(amount: number) {
     setAmount(amount);
@@ -42,33 +44,35 @@ const ZapEventModal = ({ isOpen, onClose, gameProfile, event, multiplier }: ZapE
     setAmount(amount);
   }
 
-  const { ndk } = useNdk();
+  const { value: metadata, error } = useAsync(async () => {
+    if (gameProfilePubkey && initialized) {
+      return lookupMetadata(gameProfilePubkey!);
+    } else {
+      return undefined;
+    }
+  }, [gameProfilePubkey, initialized]);
 
-  const onZapClick = () => {
-    setIsLoading(true);
-    requestProvider().then((provider) => {
-      ndk.zap(
-        event,
-        amount * 1000,
-        {
-          comment: comment,
-          onComplete: () => {
-            // TODO: show confetti to user
-            onClose();
-            setIsLoading(false);
-            return undefined;
-          },
-          onLnPay: async ({ pr }) => {
-            if (provider) {
-              return provider.sendPayment(pr);
-            } else {
-              alert("No payment provider found. Install alby?");
-              return undefined;
-            }
-          },
-        },
-      );
-    });
+  if (error) {
+    console.error(`Failed fetching metadata of notes in dialog `, error);
+  }
+
+  const onZapClick = async () => {
+    if (initialized) {
+      setIsLoading(true);
+      const zapEntity = ZapEntity.event(event.id);
+      const zapDetails = new ZapDetails(ZapType.Public).message(comment);
+      try {
+        await client?.zap(zapEntity, amount, zapDetails);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+        onClose();
+      }
+    } else {
+      console.error(`Can't zap if client is not initialized`);
+      onClose();
+    }
   };
 
   return (
@@ -92,11 +96,11 @@ const ZapEventModal = ({ isOpen, onClose, gameProfile, event, multiplier }: ZapE
               <HStack>
                 <Avatar
                   size={"sm"}
-                  src={gameProfile?.image}
+                  src={metadata?.getPicture()}
                 />
                 <VStack align="start" spacing={0}>
-                  <Text fontWeight="bold">{gameProfile?.displayName}</Text>
-                  <Text fontSize="sm" color="gray.500">{gameProfile?.lud16}</Text>
+                  <Text fontWeight="bold">{metadata?.getDisplayName()}</Text>
+                  <Text fontSize="sm" color="gray.500">{metadata?.getLud16()}</Text>
                 </VStack>
               </HStack>
 

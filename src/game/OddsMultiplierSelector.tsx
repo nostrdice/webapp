@@ -7,15 +7,18 @@ import {
   SliderMark,
   SliderThumb,
   SliderTrack,
+  Spinner,
   Text,
   VStack,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
-import { useSubscribe } from "nostr-hooks";
-import { useMemo, useState } from "react";
+import { Duration, EventSource, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
+import { useState } from "react";
 import { FaBolt } from "react-icons/fa6";
-import { NOSTR_DICE_GAME_PK, RELAYS } from "../Constants.tsx";
+import { useAsync } from "react-use";
+import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
+import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 import { extractMultiplier } from "./ExtractMultiplier.tsx";
 import ZapEventModal from "./ZapDialog.tsx";
 
@@ -48,16 +51,32 @@ const indexToMultiplier = (index: number) => {
 };
 
 const OddsMultiplierSelector = () => {
-  const filters = useMemo(() => [{ authors: [NOSTR_DICE_GAME_PK], kinds: [1] }], [NOSTR_DICE_GAME_PK]);
   const [selectedSliderIndex, setSelectedSliderIndex] = useState(5);
   const [selectedMultiplier, setSelectedMultiplier] = useState(indexToMultiplier(5)!);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { events } = useSubscribe({
-    filters: filters,
-    relays: RELAYS,
-    fetchProfiles: true,
-  });
+  const { client, initialized } = useNostrClient();
+
+  const { loading, value: maybeEvents, error } = useAsync(async () => {
+    if (client && initialized) {
+      const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
+      const filter = new Filter().author(pubkey).kind(new Kind(1));
+      const source = EventSource.relays(Duration.fromSecs(10));
+      return client!.getEventsOf([filter], source);
+    } else {
+      return [];
+    }
+  }, [client, initialized]);
+
+  if (loading) {
+    return <Spinner />;
+  }
+
+  if (error) {
+    console.error(`Failed fetching game notes here`, error);
+  }
+
+  const events = maybeEvents ?? [];
 
   const handleSliderChange = (value: number) => {
     setSelectedMultiplier(indexToMultiplier(value));
@@ -72,7 +91,7 @@ const OddsMultiplierSelector = () => {
   };
 
   const selectedNote = events.find((e) => e.content.includes(`${selectedMultiplier.value}x`));
-  const header = selectedNote ? `${extractMultiplier(selectedNote.content)}x` : undefined;
+  const header = selectedNote ? `${extractMultiplier(selectedNote.content)}` : undefined;
 
   const content = selectedNote?.content;
   const multiplierHeadingFinePrint = `${selectedMultiplier.chance}% chance to win`;
@@ -146,40 +165,38 @@ const OddsMultiplierSelector = () => {
         </Box>
       </Box>
       <Box paddingTop={"5"}>
-        {header
-          ? (
-            <ZapEventModal
-              gameProfile={selectedNote?.author.profile}
-              event={selectedNote!}
-              isOpen={isOpen}
-              onClose={() => setIsOpen(false)}
-              multiplier={header}
-            />
-          )
-          : ""}
         {(content && header)
           ? (
-            <Box
-              maxWidth="450px"
-              margin="auto"
-              padding={6}
-              borderRadius="lg"
-              boxShadow="xl"
-              background={"whiteAlpha.300"}
-            >
-              <VStack>
-                <Heading size={"xs"}>{multiplierHeadingFinePrint}</Heading>
-                <Heading size={"2xl"}>{multiplierHeading}</Heading>
-                <Box display="flex" justifyContent="center">
-                  <Text py="1" textAlign="center">
-                    {content}
-                  </Text>
-                </Box>
-                <Button variant="solid" colorScheme="blue" onClick={() => setIsOpen(true)}>
-                  Zap <FaBolt />
-                </Button>
-              </VStack>
-            </Box>
+            <>
+              <ZapEventModal
+                gameProfilePubkey={selectedNote.author}
+                event={selectedNote}
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                multiplier={header}
+              />
+              <Box
+                maxWidth="450px"
+                margin="auto"
+                padding={6}
+                borderRadius="lg"
+                boxShadow="xl"
+                background={"whiteAlpha.300"}
+              >
+                <VStack>
+                  <Heading size={"xs"}>{multiplierHeadingFinePrint}</Heading>
+                  <Heading size={"2xl"}>{multiplierHeading}</Heading>
+                  <Box display="flex" justifyContent="center">
+                    <Text py="1" textAlign="center">
+                      {content}
+                    </Text>
+                  </Box>
+                  <Button variant="solid" colorScheme="blue" onClick={() => setIsOpen(true)}>
+                    Zap <FaBolt />
+                  </Button>
+                </VStack>
+              </Box>
+            </>
           )
           : ""}
       </Box>

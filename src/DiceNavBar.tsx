@@ -1,5 +1,3 @@
-"use client";
-
 import { CloseIcon, HamburgerIcon, UnlockIcon } from "@chakra-ui/icons";
 import {
   Avatar,
@@ -8,27 +6,40 @@ import {
   Flex,
   HStack,
   IconButton,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
   Stack,
   Text,
   useColorModeValue,
   useDisclosure,
 } from "@chakra-ui/react";
-import { useActiveUser, useLogin } from "nostr-hooks";
+import { useAsync } from "react-use";
+import { useNostrClient } from "./nostr-tools/NostrClientProvider.tsx";
 
 export function DiceNavBar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const {
-    loginWithExtension,
-    logout,
-  } = useLogin();
-  const { activeUser } = useActiveUser({ fetchProfile: true });
-  const isLoggedIn = activeUser !== undefined;
-  const profile = activeUser?.profile;
+  const { client, lookupMetadata } = useNostrClient();
+
+  const { value, error } = useAsync(async () => {
+    if (client) {
+      const signer = await client.signer();
+      const publicKey = await signer.publicKey();
+      const metadata = await lookupMetadata(publicKey);
+      return { metadata, publicKey };
+    } else {
+      return undefined;
+    }
+  }, [client]);
+
+  const metadata = value?.metadata;
+  const publickey = value?.publicKey;
+
+  if (error) {
+    console.error(`Failed fetching metadata of notes in dialog `, error);
+  }
+
+  const isLoggedIn = metadata !== undefined;
+
+  const pubkeyString = publickey?.toBech32();
 
   return (
     <Box bg={useColorModeValue("gray.100", "gray.900")} px={4}>
@@ -50,13 +61,13 @@ export function DiceNavBar() {
               <Stack>
                 <Box>
                   <Text as="b">
-                    {profile?.displayName}
+                    {metadata?.getDisplayName()}
                   </Text>
                 </Box>
                 <Box>
                   <Text fontSize="xs">
-                    {activeUser?.npub.slice(0, 7) + "..."
-                      + activeUser?.npub.slice(activeUser?.npub.length - 5, activeUser?.npub.length - 1)}
+                    {pubkeyString?.slice(0, 7) + "..."
+                      + pubkeyString?.slice(pubkeyString?.length - 5, pubkeyString?.length)}
                   </Text>
                 </Box>
               </Stack>
@@ -68,30 +79,18 @@ export function DiceNavBar() {
                 size={"sm"}
                 mr={4}
                 leftIcon={<UnlockIcon />}
-                onClick={() => loginWithExtension()}
+                onClick={() => {
+                }}
               >
                 Login
               </Button>
             )}
           {isLoggedIn
             ? (
-              <Menu>
-                <MenuButton
-                  as={Button}
-                  rounded={"full"}
-                  variant={"link"}
-                  cursor={"pointer"}
-                  minW={0}
-                >
-                  <Avatar
-                    size={"sm"}
-                    src={profile?.image}
-                  />
-                </MenuButton>
-                <MenuList>
-                  <MenuItem onClick={logout}>Logout</MenuItem>
-                </MenuList>
-              </Menu>
+              <Avatar
+                size={"sm"}
+                src={metadata?.getPicture()}
+              />
             )
             : (
               <Avatar

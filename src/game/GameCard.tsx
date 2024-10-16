@@ -1,16 +1,15 @@
 import { Button, Card, CardBody, CardFooter, Heading, Stack, Text } from "@chakra-ui/react";
-import { NDKEvent, NDKUserProfile } from "@nostr-dev-kit/ndk";
+import { Event } from "@rust-nostr/nostr-sdk";
 import { useState } from "react";
 import { FaBolt } from "react-icons/fa6";
 import { extractMultiplier } from "./ExtractMultiplier.tsx";
 import ZapEventModal from "./ZapDialog.tsx";
 
 export interface GameCardProps {
-  note: NDKEvent;
-  gameProfile?: NDKUserProfile | undefined;
+  note: Event;
 }
 
-export function GameCard({ note, gameProfile }: GameCardProps) {
+export function GameCard({ note }: GameCardProps) {
   const header = extractMultiplier(note.content);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +23,7 @@ export function GameCard({ note, gameProfile }: GameCardProps) {
     >
       <div>
         <ZapEventModal
-          gameProfile={gameProfile}
+          gameProfilePubkey={note.author}
           event={note}
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
