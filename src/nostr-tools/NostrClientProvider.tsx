@@ -126,7 +126,7 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
 
     client!.handleNotifications(handle);
 
-    client!.subscribeWithId(subscriptionId, [filter.removeLimit()]);
+    client!.subscribeWithId(subscriptionId, [filter]);
     setSubscriptions(updatedSubscriptions);
   }, [client, subscriptions]);
 
