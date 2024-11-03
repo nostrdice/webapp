@@ -24,12 +24,15 @@ interface NostrClientProviderProps {
   children: ReactElement;
 }
 
+const NOSTR_INDEX_DB = "nostr-sdk-webapp-example";
+
 // NostrClientProvider to wrap the app
 export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
   const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [subscriptions, setSubscriptions] = useState<Record<string, (event: Event) => void>>({});
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Load WASM and initialize components
   loadWasmSync();
@@ -44,16 +47,10 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
           console.log(error);
         }
 
-        const nipSigner = new Nip07Signer();
-        const signer = NostrSigner.nip07(nipSigner);
-        const zapper = await NostrZapper.webln(); // To use NWC: NostrZapper.nwc(uri);
-
-        const db = await NostrDatabase.indexeddb("nostr-sdk-webapp-example");
+        const db = await NostrDatabase.indexeddb(NOSTR_INDEX_DB);
 
         // Build client
         const client = new ClientBuilder()
-          .signer(signer)
-          .zapper(zapper)
           .database(db)
           .build();
 
@@ -92,13 +89,13 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
       for (let i = 0; i < boundary; i++) {
         callback(sorted[i]);
       }
-      const newest = sorted[0].createdAt;
-      if (newest) {
-        // Filter.fromJson(providedFilter.asJson())
-        // console.log(`filter: `);
-        // console.log(`Newest ${newest.toHumanDatetime()}`);
-        // filter = providedFilter.since(newest);
-      }
+      // const newest = sorted[0].createdAt;
+      // if (newest) {
+      // Filter.fromJson(providedFilter.asJson())
+      // console.log(`filter: `);
+      // console.log(`Newest ${newest.toHumanDatetime()}`);
+      // filter = providedFilter.since(newest);
+      // }
     }
 
     const updatedSubscriptions = { ...subscriptions, [subscriptionId]: callback };
@@ -168,9 +165,49 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
     }
   };
 
+  const setNewClient = async () => {
+    console.log("Logging in please");
+    const nipSigner = new Nip07Signer();
+    const signer = NostrSigner.nip07(nipSigner);
+    const zapper = await NostrZapper.webln(); // To use NWC: NostrZapper.nwc(uri);
+
+    const db = await NostrDatabase.indexeddb(NOSTR_INDEX_DB);
+
+    // Build client
+    const client = new ClientBuilder()
+      .signer(signer)
+      .zapper(zapper)
+      .database(db)
+      .build();
+
+    console.log("client built");
+    // Add relays
+    for (let i = 0; i < RELAYS.length; i++) {
+      await client.addRelay(RELAYS[i]);
+    }
+
+    // Connect the client
+    await client.connect();
+    console.log("connected");
+    setClient(client);
+    setIsLoading(false);
+    setIsLoggedIn(true);
+    console.log("all done");
+  };
+
   return (
     <NostrClientContext.Provider
-      value={{ client, isLoading, subscribe, unsubscribe, lookupMetadata, initialized, lookupEvent }}
+      value={{
+        client,
+        isLoading,
+        subscribe,
+        unsubscribe,
+        lookupMetadata,
+        initialized,
+        lookupEvent,
+        setNewClient,
+        isLoggedIn,
+      }}
     >
       {children}
     </NostrClientContext.Provider>
@@ -180,11 +217,13 @@ export const NostrClientProvider = ({ children }: NostrClientProviderProps) => {
 type NostrClientContextType = {
   client: Client | null;
   isLoading: boolean;
+  isLoggedIn: boolean;
   initialized: boolean;
   subscribe: (eventId: string, filter: Filter, callback: (event: Event) => void) => Promise<void>;
   unsubscribe: (eventId: string) => void;
   lookupMetadata: (pubkey: PublicKey) => Promise<Metadata | undefined>;
   lookupEvent: (eventId: EventId) => Promise<Event | undefined>;
+  setNewClient: () => Promise<void>;
 };
 
 export const NostrClientContext = createContext<NostrClientContextType | undefined>(undefined);

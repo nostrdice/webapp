@@ -46,14 +46,19 @@ const ZapEventModal = ({ isOpen, onClose, gameProfilePubkey, event, multiplier }
 
   const { value: metadata, error } = useAsync(async () => {
     if (gameProfilePubkey && initialized) {
-      return lookupMetadata(gameProfilePubkey!);
+      try {
+        return lookupMetadata(gameProfilePubkey!);
+      } catch (error) {
+        console.debug(error);
+        return undefined;
+      }
     } else {
       return undefined;
     }
   }, [gameProfilePubkey, initialized]);
 
   if (error) {
-    console.error(`Failed fetching metadata of notes in dialog `, error);
+    console.debug(`Failed fetching metadata of notes in dialog `, error);
   }
 
   const onZapClick = async () => {

@@ -1,5 +1,5 @@
 import { Avatar, Box, Center, HStack, Spinner, Text, Tooltip, VStack } from "@chakra-ui/react";
-import { Event, EventId, Filter, Kind, PublicKey } from "@rust-nostr/nostr-sdk";
+import { Event, EventId, Filter, Kind, PublicKey, Timestamp } from "@rust-nostr/nostr-sdk";
 import { decode, Section } from "light-bolt11-decoder";
 import { useCallback, useEffect, useState } from "react";
 import { useAsync } from "react-use";
@@ -29,7 +29,7 @@ export function ZapEventStream() {
 
     if (!subscribed && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
-      const filter = new Filter().author(pubkey).kind(new Kind(9735)).limit(20);
+      const filter = new Filter().author(pubkey).kind(new Kind(9735)).since(Timestamp.fromSecs(1729641360)).limit(20);
       // TODO: use async hook here
       subscribe(eventId, filter, handleEvent).then(() => {
         setSubscribed(true);
@@ -105,14 +105,18 @@ function Profile({ pubkey }: ProfileProps) {
 
   const { value: metadata, error } = useAsync(async () => {
     if (pubkey && initialized) {
-      return lookupMetadata(PublicKey.fromHex(pubkey)!);
+      try {
+        return lookupMetadata(PublicKey.fromHex(pubkey)!);
+      } catch (error) {
+        console.debug(error);
+      }
     } else {
       return undefined;
     }
   }, [pubkey, initialized]);
 
   if (error) {
-    console.error(`Failed fetching metadata of notes in zap stream `, error);
+    console.debug(`Failed fetching metadata of notes in zap stream `, error);
   }
 
   const elipsed = pubkey.slice(0, 4) + `...` + pubkey.slice(pubkey.length - 4, pubkey.length);

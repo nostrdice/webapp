@@ -1,23 +1,27 @@
 import { Box, Button, Center, Spinner, Text, VStack } from "@chakra-ui/react";
-import { Event, Filter, Kind, NostrSigner, PublicKey } from "@rust-nostr/nostr-sdk";
+import { Event, Filter, Kind, NostrSigner, PublicKey, Timestamp } from "@rust-nostr/nostr-sdk";
 import { useCallback, useEffect, useState } from "react";
 import { useAsync } from "react-use";
 import { NOSTR_DICE_GAME_PK } from "../Constants.tsx";
 import { useNostrClient } from "../nostr-tools/NostrClientProvider.tsx";
 
 export function DmEventStream() {
-  const { client, subscribe, unsubscribe, initialized } = useNostrClient();
+  const { client, subscribe, unsubscribe, initialized, isLoggedIn } = useNostrClient();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [subscribed, setSubscribed] = useState(false);
 
   const { value: nostrSigner, error } = useAsync(async () => {
-    return client?.signer();
-  }, [client]);
+    if (isLoggedIn) {
+      return client?.signer();
+    }
+  }, [client, isLoggedIn]);
 
   const { value: activeUser, error: activeUserError } = useAsync(async () => {
-    return nostrSigner?.publicKey();
-  }, [nostrSigner]);
+    if (isLoggedIn) {
+      return nostrSigner?.publicKey();
+    }
+  }, [nostrSigner, isLoggedIn]);
 
   const handleEvent = useCallback((event: Event) => {
     setEvents((prevEvents) => {
@@ -35,7 +39,10 @@ export function DmEventStream() {
 
     if (!subscribed && activeUser && initialized) {
       const pubkey = PublicKey.fromHex(NOSTR_DICE_GAME_PK);
-      const filter = new Filter().pubkey(activeUser).author(pubkey).kind(new Kind(4));
+      const filter = new Filter().pubkey(activeUser).author(pubkey)
+        .kind(new Kind(4))
+        .since(Timestamp.fromSecs(1729641360))
+        .limit(20);
       subscribe(eventId, filter, handleEvent).then(() => {
         setSubscribed(true);
       });

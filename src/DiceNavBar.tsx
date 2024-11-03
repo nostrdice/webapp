@@ -17,10 +17,10 @@ import { useNostrClient } from "./nostr-tools/NostrClientProvider.tsx";
 export function DiceNavBar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const { client, lookupMetadata } = useNostrClient();
+  const { client, lookupMetadata, isLoggedIn, setNewClient } = useNostrClient();
 
   const { value, error } = useAsync(async () => {
-    if (client) {
+    if (client && isLoggedIn) {
       const signer = await client.signer();
       const publicKey = await signer.publicKey();
       const metadata = await lookupMetadata(publicKey);
@@ -28,16 +28,16 @@ export function DiceNavBar() {
     } else {
       return undefined;
     }
-  }, [client]);
+  }, [client, isLoggedIn]);
 
   const metadata = value?.metadata;
   const publickey = value?.publicKey;
 
   if (error) {
-    console.error(`Failed fetching metadata of notes in dialog `, error);
+    console.error(`Failed fetching metadata of notes in nav bar.`, error);
   }
 
-  const isLoggedIn = metadata !== undefined;
+  // const isLoggedIn = metadata !== undefined;
 
   const pubkeyString = publickey?.toBech32();
 
@@ -79,7 +79,8 @@ export function DiceNavBar() {
                 size={"sm"}
                 mr={4}
                 leftIcon={<UnlockIcon />}
-                onClick={() => {
+                onClick={async () => {
+                  await setNewClient();
                 }}
               >
                 Login
